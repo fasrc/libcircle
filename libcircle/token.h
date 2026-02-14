@@ -74,6 +74,7 @@ typedef struct CIRCLE_state_st {
     /* manage state for requesting work from other procs */
     int work_requested;             /* flag indicating we have requested work */
     int work_requested_rank;        /* rank of process we requested work from */
+    MPI_Request work_request_send_req; /* request for a pending non-blocking work request send */
 
     /* tree used for collective operations */
     CIRCLE_tree_state_st tree;   /* parent and children of tree */

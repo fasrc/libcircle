@@ -152,6 +152,7 @@ static void CIRCLE_init_local_state(MPI_Comm comm, CIRCLE_state_st* local_state)
 
     /* initialize work request state */
     local_state->work_requested = 0;
+    local_state->work_request_send_req = MPI_REQUEST_NULL;
 
     /* determine whether we are using tree-based or circle-based
      * termination detection */

@@ -1278,6 +1278,15 @@ int32_t CIRCLE_request_work(CIRCLE_internal_queue_t* qp, CIRCLE_state_st* st, in
         /* get rank of process we requested work from */
         int source = st->work_requested_rank;
 
+        /* make progress on the outstanding non-blocking request send */
+        if(st->work_request_send_req != MPI_REQUEST_NULL) {
+            int send_complete = 0;
+            MPI_Test(&st->work_request_send_req, &send_complete, MPI_STATUS_IGNORE);
+            if(send_complete) {
+                st->work_request_send_req = MPI_REQUEST_NULL;
+            }
+        }
+
         /* see if we got a work reply from that process */
         int flag;
         MPI_Status status;
@@ -1291,6 +1300,12 @@ int32_t CIRCLE_request_work(CIRCLE_internal_queue_t* qp, CIRCLE_state_st* st, in
 
             /* receive message(s) and set return code */
             rc = CIRCLE_work_receive(qp, st, source, size);
+
+            /* ensure we release request send resources before re-requesting */
+            if(st->work_request_send_req != MPI_REQUEST_NULL) {
+                MPI_Wait(&st->work_request_send_req, MPI_STATUS_IGNORE);
+                st->work_request_send_req = MPI_REQUEST_NULL;
+            }
 
             /* flip flag to indicate we're no longer waiting for a reply */
             st->work_requested = 0;
@@ -1310,10 +1325,9 @@ int32_t CIRCLE_request_work(CIRCLE_internal_queue_t* qp, CIRCLE_state_st* st, in
         /* increment number of work requests for profiling */
         st->local_work_requested++;
 
-        /* TODO: use isend to avoid deadlocks */
-        /* send work request */
-        MPI_Send(NULL, 0, MPI_BYTE, source,
-                 CIRCLE_TAG_WORK_REQUEST, comm);
+        /* send work request asynchronously to avoid deadlock cycles */
+        MPI_Isend(NULL, 0, MPI_BYTE, source,
+                  CIRCLE_TAG_WORK_REQUEST, comm, &st->work_request_send_req);
 
         /* set flag and source to indicate we requested work */
         st->work_requested = 1;
