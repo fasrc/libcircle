@@ -522,39 +522,39 @@ int8_t CIRCLE_worker()
     if (CIRCLE_debug_level >= CIRCLE_LOG_INFO) {
         /* allocate memory for summary data */
         size_t array_elems = (size_t) size;
-        uint32_t* total_objects_processed_array = (uint32_t*) calloc(array_elems, sizeof(uint32_t));
-        uint32_t* total_work_requests_array = (uint32_t*) calloc(array_elems, sizeof(uint32_t));
-        uint32_t* total_no_work_received_array = (uint32_t*) calloc(array_elems, sizeof(uint32_t));
+        uint64_t* total_objects_processed_array = (uint64_t*) calloc(array_elems, sizeof(uint64_t));
+        uint64_t* total_work_requests_array = (uint64_t*) calloc(array_elems, sizeof(uint64_t));
+        uint64_t* total_no_work_received_array = (uint64_t*) calloc(array_elems, sizeof(uint64_t));
 
         /* gather and reduce summary info */
-        MPI_Gather(&sptr->local_objects_processed,    1, MPI_INT,
-                   &total_objects_processed_array[0], 1, MPI_INT,
+        MPI_Gather(&sptr->local_objects_processed,    1, MPI_LONG_LONG,
+                   &total_objects_processed_array[0], 1, MPI_LONG_LONG,
                    0, comm);
-        MPI_Gather(&sptr->local_work_requested,   1, MPI_INT,
-                   &total_work_requests_array[0], 1, MPI_INT,
+        MPI_Gather(&sptr->local_work_requested,   1, MPI_UNSIGNED_LONG_LONG,
+                   &total_work_requests_array[0], 1, MPI_UNSIGNED_LONG_LONG,
                    0, comm);
-        MPI_Gather(&sptr->local_no_work_received,    1, MPI_INT,
-                   &total_no_work_received_array[0], 1, MPI_INT,
+        MPI_Gather(&sptr->local_no_work_received,    1, MPI_UNSIGNED_LONG_LONG,
+                   &total_no_work_received_array[0], 1, MPI_UNSIGNED_LONG_LONG,
                    0, comm);
 
-        int total_objects_processed = 0;
+        int64_t total_objects_processed = 0;
         MPI_Reduce(&sptr->local_objects_processed, &total_objects_processed, 1,
-                   MPI_INT, MPI_SUM, 0, comm);
+                   MPI_LONG_LONG, MPI_SUM, 0, comm);
 
         /* print summary from rank 0 */
         if(rank == 0) {
             int i;
             for(i = 0; i < size; i++) {
-                LOG(CIRCLE_LOG_INFO, "Rank %d\tObjects Processed %d\t%0.3lf%%", i,
+                LOG(CIRCLE_LOG_INFO, "Rank %d\tObjects Processed %lld\t%0.3lf%%", i,
                     total_objects_processed_array[i],
                     (double)total_objects_processed_array[i] /
                     (double)total_objects_processed * 100.0);
-                LOG(CIRCLE_LOG_INFO, "Rank %d\tWork requests: %d", i, total_work_requests_array[i]);
-                LOG(CIRCLE_LOG_INFO, "Rank %d\tNo work replies: %d", i, total_no_work_received_array[i]);
+                LOG(CIRCLE_LOG_INFO, "Rank %d\tWork requests: %llu", i, total_work_requests_array[i]);
+                LOG(CIRCLE_LOG_INFO, "Rank %d\tNo work replies: %llu", i, total_no_work_received_array[i]);
             }
 
             LOG(CIRCLE_LOG_INFO,
-                "Total Objects Processed: %d", total_objects_processed);
+                "Total Objects Processed: %lld", total_objects_processed);
         }
 
         /* free memory */

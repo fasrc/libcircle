@@ -106,9 +106,9 @@ typedef struct CIRCLE_state_st {
     MPI_Request* abort_req; /* pointer to array of MPI_Requests for abort messages */
 
     /* profiling counters */
-    int32_t local_objects_processed; /* number of locally completed work items */
-    uint32_t local_work_requested;   /* number of times a process asked us for work */
-    uint32_t local_no_work_received; /* number of times a process asked us for work */
+    int64_t local_objects_processed; /* number of locally completed work items */
+    uint64_t local_work_requested;   /* number of times a process asked us for work */
+    uint64_t local_no_work_received; /* number of times a process asked us for work */
 } CIRCLE_state_st;
 
 /* given the rank of the calling process, the number of ranks in the job,
